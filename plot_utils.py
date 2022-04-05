@@ -5,6 +5,59 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import utils
 
+import math
+def sigmoid(x, slope=1):
+    return 1. / (1. + np.exp(-slope*x))
+def inv_sigmoid(x, slope=1):
+    return (1./slope)*np.log(x / (1-x))
+def to_lodds(x):
+    return -np.log(1./x - 1)
+
+def plot_hallucinations(X, C, Y, models, mus, compressor):
+    plt.figure(figsize=(10, 10))
+    hallucinated_all = []
+    target_probs = np.linspace(0.1, 0.9, 9)
+
+    for target in target_probs:
+        t = to_lodds(target)
+        inner_prods = np.array([np.dot(X[i], models[i]) for i in range(len(models))])
+        preds_lodds = inner_prods + np.squeeze(mus)
+        sensitivities = np.array([np.dot(m, m) for m in models])
+        diffs = preds_lodds - t
+        deltas = -diffs / sensitivities
+        deltas = np.expand_dims(deltas, 1)
+        hallucinated = X + deltas*models
+        # TODO: pass in predict function
+        hallucinated_dataloader = ncr.dataloader(prepend_zero(C),
+                                                 prepend_zero(hallucinated),
+                                                 np.squeeze(prepend_zero(Y)),
+                                                 batch_size=16)
+        hallucinated_preds = trainer.predict_y(ncr, hallucinated_dataloader)[1:, 0]
+
+        dists = np.abs([preds[i] - hallucinated_preds[i] for i in range(len(hallucinated_preds))])
+        hallucinated_small = compressor.transform(hallucinated)
+        min_pred = np.min(hallucinated_preds)
+        max_pred = np.max(hallucinated_preds)
+        pred_range = max_pred - min_pred
+        colors = np.array([(pred, 0, 1-pred) #(pred - min_pred) / pred_range, 0, (max_pred - pred)/ pred_range)
+                           for pred in hallucinated_preds]) # red-blue scale
+        alphas = 0.8*np.array([max(0, x) for x in np.array(1 - dists)])
+        hallucinated_all.append(hallucinated_small)
+        plt.scatter(hallucinated_small[:, 0], hallucinated_small[:, 1],
+                    alpha=alphas, c=colors, s=16)
+    hallucinated_all = np.array(hallucinated_all)
+    for i in range(hallucinated_all.shape[1]):
+        plt.plot(hallucinated_all[:, i, 0], hallucinated_all[:, i, 1],
+                 alpha=0.2, color='gray', linestyle='--')
+    X_small = compressor.transform(X)
+    plt.scatter(X_small[:, 0], X_small[:, 1], marker='*', alpha=1.0, s=32)
+    plt.xlabel("Expression PC 1", fontsize=36)
+    plt.ylabel("Expression PC 2", fontsize=36)
+    plt.xticks(fontsize=24)
+    plt.yticks(fontsize=24)
+    plt.show()
+
+
 def plot_lowdim_rep(low_dim, labels, xlabel="Expression PC 1", ylabel="Expression PC 2",
     min_samples=100, figname=None, cbar_label=None, discrete=False):
 
