@@ -200,12 +200,12 @@ def plot_lowdim_rep(low_dim, labels, xlabel="Expression PC 1", ylabel="Expressio
     ax2 = fig.add_axes([0.95, 0.15, 0.03, 0.7])
     if discrete:
         cb = mpl.colorbar.ColorbarBase(ax2, cmap=cmap, norm=norm,
-            spacing='proportional', ticks=bounds+0.5, #boundaries=bounds,
+            spacing='proportional', ticks=bounds[:-1]+0.5, #boundaries=bounds,
                                        format='%1i')
         try:
-            cb.ax.set(yticks=bounds, yticklabels=np.round(tag_names))#, fontsize=24)
+            cb.ax.set(yticks=bounds[:-1]+0.5, yticklabels=np.round(tag_names))#, fontsize=24)
         except:
-            cb.ax.set(yticks=bounds, yticklabels=tag_names)#, fontsize=24)
+            cb.ax.set(yticks=bounds[:-1]+0.5, yticklabels=tag_names)#, fontsize=24)
     else:
         cb = mpl.colorbar.ColorbarBase(ax2, cmap=cmap, format='%.1f')
         #cb.ax.set_yticklabels(fontsize=24)
