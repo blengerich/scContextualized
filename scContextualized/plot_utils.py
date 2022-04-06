@@ -16,7 +16,8 @@ def make_C_vis(C, n_vis):
     return make_grid_mat(C.values, n_vis)
 
 
-def simple_plot(xs, ys, x_label, y_label, x_ticks=None, x_ticklabels=None, y_ticks=None, y_ticklabels=None):
+def simple_plot(xs, ys, x_label, y_label,
+    x_ticks=None, x_ticklabels=None, y_ticks=None, y_ticklabels=None):
     fig = plt.figure()
     plt.plot(xs, ys)
     plt.xlabel(x_label)
@@ -38,10 +39,13 @@ def plot_homogeneous_context(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
             can visualize these effects on the correct data manifold.""")
         C_vis = make_C_vis(C, n_vis)
     for j in range(C.shape[1]):
+        C_j = C_vis.copy()
+        C_j[:, :j] = 0.
+        C_j[:, j+1:] = 0.
         all_dataloader = ncr.dataloader(
-            utils.prepend_zero(C_vis),
-            utils.prepend_zero(np.zeros((len(C_vis), X.shape[1]))),
-            utils.prepend_zero(np.zeros((len(C_vis), Y.shape[1]))),
+            utils.prepend_zero(C_j),
+            utils.prepend_zero(np.zeros((len(C_j), X.shape[1]))),
+            utils.prepend_zero(np.zeros((len(C_j), Y.shape[1]))),
             batch_size=16)
         (models, mus) = trainer.predict_params(ncr, all_dataloader)
         models = np.squeeze(models[1:]) # Heterogeneous Effects
@@ -88,6 +92,9 @@ def plot_heterogeneous(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
 
     C_vis = make_C_vis(C, n_vis)
     for j in range(C.shape[1]):
+        C_j = C_vis.copy()
+        C_j[:, :j] = 0.
+        C_j[:, j+1:] = 0.
         all_dataloader = ncr.dataloader(utils.prepend_zero(C_vis),
                                         utils.prepend_zero(np.zeros((len(C_vis), X.shape[1]))),
                                         utils.prepend_zero(np.zeros((len(C_vis), Y.shape[1]))),
@@ -95,11 +102,9 @@ def plot_heterogeneous(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
         (models, mus) = trainer.predict_params(ncr, all_dataloader)
         models = np.squeeze(models[1:]) # Heterogeneous Effects
         heterogeneous_effects = models - np.mean(models, axis=0)
-        print(np.max(heterogeneous_effects))
 
         x_classes = encoders[j].classes_
         x_ticks = (np.array(list(range(len(x_classes)))) - C_means[j]) / C_stds[j]
-
         for k in range(models.shape[1]):
             if np.max(heterogeneous_effects[:, k]) > min_effect_size:
                 simple_plot(
@@ -109,10 +114,10 @@ def plot_heterogeneous(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
                     x_ticks=x_ticks, x_ticklabels=x_classes)
 
 
-def plot_hallucinations(ncr, trainer, X, C, Y, models, mus, compressor):
+def plot_hallucinations(ncr, trainer, X, C, Y, models, mus, compressor,
+    target_probs=np.linspace(0.1, 0.9, 9)):
     plt.figure(figsize=(10, 10))
     hallucinated_all = []
-    target_probs = np.linspace(0.1, 0.9, 9)
 
     for target in target_probs:
         t = utils.to_lodds(target)
