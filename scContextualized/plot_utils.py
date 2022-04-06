@@ -6,6 +6,96 @@ import matplotlib as mpl
 import utils
 
 import math
+
+
+
+# Assume NGAM encoder.
+def plot_homogeneous_context(C, X, Y, encoders, C_means, C_stds, ylabel="Odds Ratio of Outcome"):
+    for j in range(C.shape[1]):
+        vals_to_plot = np.linspace(np.min(C.values[:, j]), np.max(C.values[:, j]), 1000)
+        C_vis = np.zeros((1000, C.shape[1]))
+        C_vis[:, j] = vals_to_plot
+
+        context_factor = C.columns.tolist()[j]
+        all_dataloader = ncr.dataloader(utils.prepend_zero(C_vis),
+                                        utils.prepend_zero(np.zeros((len(C_vis), X.shape[1]))),
+                                        utils.prepend_zero(np.zeros((len(C_vis), Y.shape[1]))),
+                                        batch_size=16)
+        (models, mus) = trainer.predict_params(ncr, all_dataloader)
+        models = np.squeeze(models[1:]) # Heterogeneous Effects
+        mus = np.squeeze(mus[1:]) # Homogeneous Effects
+        x_classes = encoders[j].classes_
+        x_ticks = (np.array(list(range(len(x_classes)))) - C_means[j]) / C_stds[j]
+
+        homogeneous_context_effects = mus - np.min(mus)
+        if np.max(homogeneous_context_effects) > 0.01:
+            fig = plt.figure()
+            plt.plot(vals_to_plot, np.exp(homogeneous_context_effects))
+            plt.xlabel(context_factor)
+            plt.xticks(x_ticks, x_classes)
+            plt.ylabel(ylabel)
+            plt.show()
+
+def plot_homogeneous_tx(C, X, Y, selected_transcript_names, ylabel="Odds Ratio of Outcome"):
+    vals_to_plot = np.linspace(np.min(C.values[:, 0]), np.max(C.values[:, 0]), 1000)
+    C_vis = np.zeros((1000, C.shape[1]))
+    C_vis[:, 0] = vals_to_plot
+    context_factor = C.columns.tolist()[0]
+    all_dataloader = ncr.dataloader(utils.prepend_zero(C_vis),
+                                    utils.prepend_zero(np.zeros((len(C_vis), X.shape[1]))),
+                                    utils.prepend_zero(np.zeros((len(C_vis), Y.shape[1]))),
+                                    batch_size=16)
+    (models, mus) = trainer.predict_params(ncr, all_dataloader)
+    models = np.squeeze(models[1:]) # Heterogeneous Effects
+    homogeneous_tx_effects = np.mean(models, axis=0)
+    effects = []
+    for k in range(models.shape[1]): #, key=lambda x: homogeneous_tx_effects):
+        vals_to_plot = np.linspace(np.min(X[:, k]), np.max(X[:, k]), 1000)
+        my_effect = homogeneous_tx_effects[k]*vals_to_plot
+        my_effect -= np.mean(my_effect)
+        effects.append(np.max(my_effect))
+    for (k, _) in reversed(sorted(enumerate(effects), key=lambda x: x[1])):
+        vals_to_plot = np.linspace(np.min(X[:, k]), np.max(X[:, k]), 1000)
+        my_effect = homogeneous_tx_effects[k]*vals_to_plot
+        my_effect -= np.mean(my_effect)
+        my_effect = np.exp(my_effect)
+        if np.max(my_effect) > 1.1:
+            fig = plt.figure()
+            plt.plot(vals_to_plot, my_effect)
+            plt.xlabel("Expression of {}".format(selected_transcripts_names[k]), fontsize=18)
+            plt.ylabel(ylabel, fontsize=18)
+            plt.show()
+
+def plot_heterogeneous(C, X, Y, encoders, C_means, C_stds, selected_transcripts_names, ylabel="Influence of "):
+    for j in range(C.shape[1]):
+        vals_to_plot = np.linspace(np.min(C.values[:, j]), np.max(C.values[:, j]), 1000)
+        C_vis = np.zeros((1000, C.shape[1]))
+        C_vis[:, j] = vals_to_plot
+
+        context_factor = C.columns.tolist()[j]
+        all_dataloader = ncr.dataloader(utils.prepend_zero(C_vis),
+                                        utils.prepend_zero(np.zeros((len(C_vis), X.shape[1]))),
+                                        utils.prepend_zero(np.zeros((len(C_vis), Y.shape[1]))),
+                                        batch_size=16)
+        (models, mus) = trainer.predict_params(ncr, all_dataloader)
+        models = np.squeeze(models[1:]) # Heterogeneous Effects
+        heterogeneous_effects = models - np.mean(models, axis=0)
+        print(np.max(heterogeneous_effects))
+
+        x_classes = encoders[j].classes_
+        x_ticks = (np.array(list(range(len(x_classes)))) - C_means[j]) / C_stds[j]
+
+        for k in range(models.shape[1]):
+            if np.max(heterogeneous_effects[:, k]) > 0.003:
+                fig = plt.figure()
+                gene = selected_transcripts_names[k]
+                plt.plot(vals_to_plot, heterogeneous_effects[:, k])
+                plt.xlabel(context_factor)
+                plt.xticks(x_ticks, x_classes)
+                plt.ylabel("{}{}".format(ylabel, gene))
+                plt.show()
+
+
 def sigmoid(x, slope=1):
     return 1. / (1. + np.exp(-slope*x))
 def inv_sigmoid(x, slope=1):
