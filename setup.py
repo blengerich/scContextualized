@@ -2,7 +2,7 @@ import setuptools
 
 setuptools.setup(name='scContextualized',
       packages=['scContextualized'],
-      version='0.0.2',
+      version='0.0.3',
       install_requires=[
           'pytorch-lightning',
           'torch',
