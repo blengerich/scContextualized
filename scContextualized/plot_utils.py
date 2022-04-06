@@ -57,6 +57,7 @@ def plot_homogeneous_context(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
 def plot_homogeneous_tx(ncr, trainer, C, X, Y, X_names,
     ylabel="Odds Ratio of Outcome", min_effect_size=1.1):
     C_vis = np.zeros_like(C.values)
+    X_vis = make_C_vis(X, 1000)
     all_dataloader = ncr.dataloader(
         utils.prepend_zero(C_vis),
         utils.prepend_zero(np.zeros((len(C_vis), X.shape[1]))),
@@ -67,15 +68,15 @@ def plot_homogeneous_tx(ncr, trainer, C, X, Y, X_names,
     homogeneous_tx_effects = np.mean(models, axis=0)
     effects = []
     for k in range(models.shape[1]):
-        effect = homogeneous_tx_effects[k]*C_vis[:, k]
+        effect = homogeneous_tx_effects[k]*X_vis[:, k]
         effect -= np.mean(effect)
         effects.append(np.max(effect))
     for (k, _) in reversed(sorted(enumerate(effects), key=lambda x: x[1])):
-        effect = homogeneous_tx_effects[k]*C_vis[:, k]
+        effect = homogeneous_tx_effects[k]*X_vis[:, k]
         effect -= np.mean(effect)
         effect = np.exp(effect)
         if np.max(effect) > min_effect_size:
-            simple_plot(C_vis[:, k], my_effect,
+            simple_plot(X_vis[:, k], effect,
                 x_label="Expression of {}".format(X_names[k]),
                 y_label=ylabel)
 
@@ -200,12 +201,12 @@ def plot_lowdim_rep(low_dim, labels, xlabel="Expression PC 1", ylabel="Expressio
     ax2 = fig.add_axes([0.95, 0.15, 0.03, 0.7])
     if discrete:
         cb = mpl.colorbar.ColorbarBase(ax2, cmap=cmap, norm=norm,
-            spacing='proportional', ticks=bounds+0.5,#boundaries=bounds,
+            spacing='proportional', ticks=bounds+0.5, #boundaries=bounds,
                                        format='%1i')
         try:
-            cb.ax.set_yticklabels(np.round(tag_names), fontsize=24)
+            cb.ax.set(yticks=np.round(tag_names), yticklabels=np.round(tag_names), fontsize=24)
         except:
-            cb.ax.set_yticklabels(tag_names, fontsize=24)
+            cb.ax.set(yticks=tag_names, yticklabels=tag_names, fontsize=24)
     else:
         cb = mpl.colorbar.ColorbarBase(ax2, cmap=cmap, format='%.1f')
         #cb.ax.set_yticklabels(fontsize=24)
