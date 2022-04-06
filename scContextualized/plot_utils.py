@@ -1,70 +1,87 @@
 
 import numpy as np
-import sys
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 from scContextualized import utils
 
 
-# Assume NGAM encoder.
-def plot_homogeneous_context(ncr, trainer, C, X, Y, encoders, C_means, C_stds, ylabel="Odds Ratio of Outcome"):
+def make_C_vis(C, n_vis):
+    C_vis = np.zeros((n_vis, C.shape[1]))
     for j in range(C.shape[1]):
-        vals_to_plot = np.linspace(np.min(C.values[:, j]), np.max(C.values[:, j]), 1000)
-        C_vis = np.zeros((1000, C.shape[1]))
+        vals_to_plot = np.linspace(np.min(C.values[:, j]), np.max(C.values[:, j]), n_vis)
         C_vis[:, j] = vals_to_plot
+    return C_vis
 
-        context_factor = C.columns.tolist()[j]
-        all_dataloader = ncr.dataloader(utils.prepend_zero(C_vis),
-                                        utils.prepend_zero(np.zeros((len(C_vis), X.shape[1]))),
-                                        utils.prepend_zero(np.zeros((len(C_vis), Y.shape[1]))),
-                                        batch_size=16)
+
+def simple_plot(xs, ys, x_label, y_label, x_ticks=None, x_ticklabels=None, y_ticks=None, y_ticklabels=None):
+    fig = plt.figure()
+    plt.plot(xs, ys)
+    plt.xlabel(x_label)
+    plt.ylabel(ylabel)
+    if x_ticks is not None:
+        plt.xticks(x_ticks, x_ticklabels)
+    if y_ticks is not None:
+        plt.yticks(y_ticks, y_ticklabels)
+    plt.show()
+
+
+def plot_homogeneous_context(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
+    ylabel="Odds Ratio of Outcome", C_vis=None, n_vis=1000, min_effect_size=1.1):
+    print("Estimating Homogeneous Contextual Effects.")
+    if C_vis is None:
+        print("""Generating visualizing datapoints by assuming the encoder is
+            an additive model and thus doesn't require sampling on a manifold.
+            If the encoder has interactions, please supply C_vis so that we
+            can visualize these effects on the correct data manifold.""")
+        C_vis = make_C_vis(C, n_vis)
+    for j in range(C.shape[1]):
+        all_dataloader = ncr.dataloader(
+            utils.prepend_zero(C_vis),
+            utils.prepend_zero(np.zeros((len(C_vis), X.shape[1]))),
+            utils.prepend_zero(np.zeros((len(C_vis), Y.shape[1]))),
+            batch_size=16)
         (models, mus) = trainer.predict_params(ncr, all_dataloader)
         models = np.squeeze(models[1:]) # Heterogeneous Effects
         mus = np.squeeze(mus[1:]) # Homogeneous Effects
         x_classes = encoders[j].classes_
         x_ticks = (np.array(list(range(len(x_classes)))) - C_means[j]) / C_stds[j]
 
-        homogeneous_context_effects = mus - np.min(mus)
-        if np.max(homogeneous_context_effects) > 0.01:
-            fig = plt.figure()
-            plt.plot(vals_to_plot, np.exp(homogeneous_context_effects))
-            plt.xlabel(context_factor)
-            plt.xticks(x_ticks, x_classes)
-            plt.ylabel(ylabel)
-            plt.show()
+        effect = np.exp(mus - np.min(mus))
+        if np.max(effect) > min_effect_size:
+            simple_plot(vals_to_plot, effect,
+                x_label=C.columns.tolist()[j], y_label=ylabel,
+                x_ticks=x_ticks, x_ticklabels=x_classes)
 
-def plot_homogeneous_tx(ncr, trainer, C, X, Y, selected_transcript_names, ylabel="Odds Ratio of Outcome"):
-    vals_to_plot = np.linspace(np.min(C.values[:, 0]), np.max(C.values[:, 0]), 1000)
-    C_vis = np.zeros((1000, C.shape[1]))
-    C_vis[:, 0] = vals_to_plot
-    context_factor = C.columns.tolist()[0]
-    all_dataloader = ncr.dataloader(utils.prepend_zero(C_vis),
-                                    utils.prepend_zero(np.zeros((len(C_vis), X.shape[1]))),
+
+def plot_homogeneous_tx(ncr, trainer, C, X, Y, X_names,
+    ylabel="Odds Ratio of Outcome", min_effect_size=1.1):
+    C_vis = np.zeros_like(C.values)
+    all_dataloader = ncr.dataloader(
+        utils.prepend_zero(C_vis),
+        utils.prepend_zero(np.zeros((len(C_vis), X.shape[1]))),
                                     utils.prepend_zero(np.zeros((len(C_vis), Y.shape[1]))),
                                     batch_size=16)
     (models, mus) = trainer.predict_params(ncr, all_dataloader)
     models = np.squeeze(models[1:]) # Heterogeneous Effects
     homogeneous_tx_effects = np.mean(models, axis=0)
     effects = []
-    for k in range(models.shape[1]): #, key=lambda x: homogeneous_tx_effects):
-        vals_to_plot = np.linspace(np.min(X[:, k]), np.max(X[:, k]), 1000)
-        my_effect = homogeneous_tx_effects[k]*vals_to_plot
-        my_effect -= np.mean(my_effect)
-        effects.append(np.max(my_effect))
+    for k in range(models.shape[1]):
+        effect = homogeneous_tx_effects[k]*C_vis[:, k]
+        effect -= np.mean(effect)
+        effects.append(np.max(effect))
     for (k, _) in reversed(sorted(enumerate(effects), key=lambda x: x[1])):
-        vals_to_plot = np.linspace(np.min(X[:, k]), np.max(X[:, k]), 1000)
-        my_effect = homogeneous_tx_effects[k]*vals_to_plot
-        my_effect -= np.mean(my_effect)
-        my_effect = np.exp(my_effect)
-        if np.max(my_effect) > 1.1:
-            fig = plt.figure()
-            plt.plot(vals_to_plot, my_effect)
-            plt.xlabel("Expression of {}".format(selected_transcripts_names[k]), fontsize=18)
-            plt.ylabel(ylabel, fontsize=18)
-            plt.show()
+        effect = homogeneous_tx_effects[k]*C_vis[:, k]
+        effect -= np.mean(effect)
+        effect = np.exp(effect)
+        if np.max(effect) > min_effect_size:
+            simple_plot(C_vis[:, k], my_effect,
+                x_label="Expression of {}".format(X_names[k]),
+                y_label=ylabel)
 
-def plot_heterogeneous(ncr, trainer, C, X, Y, encoders, C_means, C_stds, selected_transcripts_names, ylabel="Influence of "):
+
+def plot_heterogeneous(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
+    X_names, ylabel="Influence of ", min_effect_size=0.003):
     for j in range(C.shape[1]):
         vals_to_plot = np.linspace(np.min(C.values[:, j]), np.max(C.values[:, j]), 1000)
         C_vis = np.zeros((1000, C.shape[1]))
@@ -84,15 +101,12 @@ def plot_heterogeneous(ncr, trainer, C, X, Y, encoders, C_means, C_stds, selecte
         x_ticks = (np.array(list(range(len(x_classes)))) - C_means[j]) / C_stds[j]
 
         for k in range(models.shape[1]):
-            if np.max(heterogeneous_effects[:, k]) > 0.003:
-                fig = plt.figure()
-                gene = selected_transcripts_names[k]
-                plt.plot(vals_to_plot, heterogeneous_effects[:, k])
-                plt.xlabel(context_factor)
-                plt.xticks(x_ticks, x_classes)
-                plt.ylabel("{}{}".format(ylabel, gene))
-                plt.show()
-
+            if np.max(heterogeneous_effects[:, k]) > min_effect_size:
+                simple_plot(
+                    vals_to_plot, heterogeneous_effects[:, k],
+                    x_label=context_factor,
+                    y_label="{}{}".format(ylabel, X_names[k]),
+                    x_ticks=x_ticks, x_ticklabels=x_classes)
 
 
 def plot_hallucinations(ncr, trainer, X, C, Y, models, mus, compressor):
@@ -173,12 +187,10 @@ def plot_lowdim_rep(low_dim, labels, xlabel="Expression PC 1", ylabel="Expressio
     fig, ax = plt.subplots(1, 1, figsize=(12, 12))  # setup the plot
     if discrete:
         scat = ax.scatter(low_dim[good_idxs, 0], low_dim[good_idxs, 1],
-                      c=tag, alpha=1.0, s=100,
-                      cmap=cmap, norm=norm)
+                      c=tag, alpha=1.0, s=100, cmap=cmap, norm=norm)
     else:
         scat = ax.scatter(low_dim[:, 0], low_dim[:, 1],
-                      c=labels, alpha=1.0, s=100,
-                      cmap=cmap)
+                      c=labels, alpha=1.0, s=100, cmap=cmap)
     plt.xlabel(xlabel, fontsize=48)
     plt.ylabel(ylabel, fontsize=48)
     plt.xticks([])
@@ -190,7 +202,6 @@ def plot_lowdim_rep(low_dim, labels, xlabel="Expression PC 1", ylabel="Expressio
         cb = mpl.colorbar.ColorbarBase(ax2, cmap=cmap, norm=norm,
             spacing='proportional', ticks=bounds+0.5,#boundaries=bounds,
                                        format='%1i')
-        #print(np.round(tag_names))
         try:
             cb.ax.set_yticklabels(np.round(tag_names), fontsize=24)
         except:
