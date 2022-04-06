@@ -8,7 +8,7 @@ from scContextualized import utils
 
 
 # Assume NGAM encoder.
-def plot_homogeneous_context(C, X, Y, encoders, C_means, C_stds, ylabel="Odds Ratio of Outcome"):
+def plot_homogeneous_context(ncr, trainer, C, X, Y, encoders, C_means, C_stds, ylabel="Odds Ratio of Outcome"):
     for j in range(C.shape[1]):
         vals_to_plot = np.linspace(np.min(C.values[:, j]), np.max(C.values[:, j]), 1000)
         C_vis = np.zeros((1000, C.shape[1]))
@@ -34,7 +34,7 @@ def plot_homogeneous_context(C, X, Y, encoders, C_means, C_stds, ylabel="Odds Ra
             plt.ylabel(ylabel)
             plt.show()
 
-def plot_homogeneous_tx(C, X, Y, selected_transcript_names, ylabel="Odds Ratio of Outcome"):
+def plot_homogeneous_tx(ncr, trainer, C, X, Y, selected_transcript_names, ylabel="Odds Ratio of Outcome"):
     vals_to_plot = np.linspace(np.min(C.values[:, 0]), np.max(C.values[:, 0]), 1000)
     C_vis = np.zeros((1000, C.shape[1]))
     C_vis[:, 0] = vals_to_plot
@@ -64,7 +64,7 @@ def plot_homogeneous_tx(C, X, Y, selected_transcript_names, ylabel="Odds Ratio o
             plt.ylabel(ylabel, fontsize=18)
             plt.show()
 
-def plot_heterogeneous(C, X, Y, encoders, C_means, C_stds, selected_transcripts_names, ylabel="Influence of "):
+def plot_heterogeneous(ncr, trainer, C, X, Y, encoders, C_means, C_stds, selected_transcripts_names, ylabel="Influence of "):
     for j in range(C.shape[1]):
         vals_to_plot = np.linspace(np.min(C.values[:, j]), np.max(C.values[:, j]), 1000)
         C_vis = np.zeros((1000, C.shape[1]))
@@ -95,7 +95,7 @@ def plot_heterogeneous(C, X, Y, encoders, C_means, C_stds, selected_transcripts_
 
 
 
-def plot_hallucinations(X, C, Y, models, mus, compressor):
+def plot_hallucinations(ncr, trainer, X, C, Y, models, mus, compressor):
     plt.figure(figsize=(10, 10))
     hallucinated_all = []
     target_probs = np.linspace(0.1, 0.9, 9)
