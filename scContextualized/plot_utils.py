@@ -20,7 +20,7 @@ def simple_plot(xs, ys, x_label, y_label, x_ticks=None, x_ticklabels=None, y_tic
     fig = plt.figure()
     plt.plot(xs, ys)
     plt.xlabel(x_label)
-    plt.ylabel(ylabel)
+    plt.ylabel(y_label)
     if x_ticks is not None:
         plt.xticks(x_ticks, x_ticklabels)
     if y_ticks is not None:
@@ -84,13 +84,10 @@ def plot_homogeneous_tx(ncr, trainer, C, X, Y, X_names,
 
 
 def plot_heterogeneous(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
-    X_names, ylabel="Influence of ", min_effect_size=0.003):
-    for j in range(C.shape[1]):
-        vals_to_plot = np.linspace(np.min(C.values[:, j]), np.max(C.values[:, j]), 1000)
-        C_vis = np.zeros((1000, C.shape[1]))
-        C_vis[:, j] = vals_to_plot
+    X_names, ylabel="Influence of ", min_effect_size=0.003, n_vis=1000):
 
-        context_factor = C.columns.tolist()[j]
+    C_vis = make_C_vis(C, n_vis)
+    for j in range(C.shape[1]):
         all_dataloader = ncr.dataloader(utils.prepend_zero(C_vis),
                                         utils.prepend_zero(np.zeros((len(C_vis), X.shape[1]))),
                                         utils.prepend_zero(np.zeros((len(C_vis), Y.shape[1]))),
@@ -106,8 +103,8 @@ def plot_heterogeneous(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
         for k in range(models.shape[1]):
             if np.max(heterogeneous_effects[:, k]) > min_effect_size:
                 simple_plot(
-                    vals_to_plot, heterogeneous_effects[:, k],
-                    x_label=context_factor,
+                    C_vis[:, j], heterogeneous_effects[:, k],
+                    x_label=C.columns.tolist()[j],
                     y_label="{}{}".format(ylabel, X_names[k]),
                     x_ticks=x_ticks, x_ticklabels=x_classes)
 
@@ -121,6 +118,7 @@ def plot_hallucinations(ncr, trainer, X, C, Y, models, mus, compressor):
         t = utils.to_lodds(target)
         inner_prods = np.array([np.dot(X[i], models[i]) for i in range(len(models))])
         preds_lodds = inner_prods + np.squeeze(mus)
+        preds = utils.sigmoid(preds_lodds)
         sensitivities = np.array([np.dot(m, m) for m in models])
         diffs = preds_lodds - t
         deltas = -diffs / sensitivities
@@ -132,7 +130,6 @@ def plot_hallucinations(ncr, trainer, X, C, Y, models, mus, compressor):
                                                  np.squeeze(utils.prepend_zero(Y)),
                                                  batch_size=16)
         hallucinated_preds = trainer.predict_y(ncr, hallucinated_dataloader)[1:, 0]
-
         dists = np.abs([preds[i] - hallucinated_preds[i] for i in range(len(hallucinated_preds))])
         hallucinated_small = compressor.transform(hallucinated)
         min_pred = np.min(hallucinated_preds)
@@ -206,9 +203,9 @@ def plot_lowdim_rep(low_dim, labels, xlabel="Expression PC 1", ylabel="Expressio
             spacing='proportional', ticks=bounds+0.5, #boundaries=bounds,
                                        format='%1i')
         try:
-            cb.ax.set(yticks=np.round(tag_names), yticklabels=np.round(tag_names))#, fontsize=24)
+            cb.ax.set(yticks=bounds, yticklabels=np.round(tag_names))#, fontsize=24)
         except:
-            cb.ax.set(yticks=tag_names, yticklabels=tag_names)#, fontsize=24)
+            cb.ax.set(yticks=bounds, yticklabels=tag_names)#, fontsize=24)
     else:
         cb = mpl.colorbar.ColorbarBase(ax2, cmap=cmap, format='%.1f')
         #cb.ax.set_yticklabels(fontsize=24)
