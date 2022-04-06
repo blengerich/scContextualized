@@ -3,10 +3,8 @@ import numpy as np
 import sys
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-import utils
 
-import math
-
+from scContextualized import utils
 
 
 # Assume NGAM encoder.
@@ -96,12 +94,6 @@ def plot_heterogeneous(C, X, Y, encoders, C_means, C_stds, selected_transcripts_
                 plt.show()
 
 
-def sigmoid(x, slope=1):
-    return 1. / (1. + np.exp(-slope*x))
-def inv_sigmoid(x, slope=1):
-    return (1./slope)*np.log(x / (1-x))
-def to_lodds(x):
-    return -np.log(1./x - 1)
 
 def plot_hallucinations(X, C, Y, models, mus, compressor):
     plt.figure(figsize=(10, 10))
@@ -109,7 +101,7 @@ def plot_hallucinations(X, C, Y, models, mus, compressor):
     target_probs = np.linspace(0.1, 0.9, 9)
 
     for target in target_probs:
-        t = to_lodds(target)
+        t = utils.to_lodds(target)
         inner_prods = np.array([np.dot(X[i], models[i]) for i in range(len(models))])
         preds_lodds = inner_prods + np.squeeze(mus)
         sensitivities = np.array([np.dot(m, m) for m in models])
