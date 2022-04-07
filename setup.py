@@ -19,5 +19,6 @@ setuptools.setup(name='scContextualized',
           'numpy>=1.19.2',
           'ipywidgets',
           'torchvision',
+          'scanpy',
       ],
 )
