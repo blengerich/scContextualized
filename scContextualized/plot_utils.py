@@ -29,7 +29,7 @@ def simple_plot(xs, ys, x_label, y_label,
     plt.show()
 
 
-def plot_homogeneous_context(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
+def plot_homogeneous_context(ncr, trainer, make_dataloader, C, X, Y, encoders, C_means, C_stds,
     ylabel="Odds Ratio of Outcome", C_vis=None, n_vis=1000, min_effect_size=1.1):
     print("Estimating Homogeneous Contextual Effects.")
     if C_vis is None:
@@ -42,7 +42,7 @@ def plot_homogeneous_context(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
         C_j = C_vis.copy()
         C_j[:, :j] = 0.
         C_j[:, j+1:] = 0.
-        all_dataloader = ncr.dataloader(
+        all_dataloader = make_dataloader(
             utils.prepend_zero(C_j),
             utils.prepend_zero(np.zeros((len(C_j), X.shape[1]))),
             utils.prepend_zero(np.zeros((len(C_j), Y.shape[1]))),
@@ -60,11 +60,11 @@ def plot_homogeneous_context(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
                 x_ticks=x_ticks, x_ticklabels=x_classes)
 
 
-def plot_homogeneous_tx(ncr, trainer, C, X, Y, X_names,
+def plot_homogeneous_tx(ncr, trainer, make_dataloader, C, X, Y, X_names,
     ylabel="Odds Ratio of Outcome", min_effect_size=1.1):
     C_vis = np.zeros_like(C.values)
     X_vis = make_grid_mat(X, 1000)
-    all_dataloader = ncr.dataloader(
+    all_dataloader = make_dataloader(
         utils.prepend_zero(C_vis),
         utils.prepend_zero(np.zeros((len(C_vis), X.shape[1]))),
                                     utils.prepend_zero(np.zeros((len(C_vis), Y.shape[1]))),
@@ -87,7 +87,7 @@ def plot_homogeneous_tx(ncr, trainer, C, X, Y, X_names,
                 y_label=ylabel)
 
 
-def plot_heterogeneous(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
+def plot_heterogeneous(ncr, trainer, make_dataloader, C, X, Y, encoders, C_means, C_stds,
     X_names, ylabel="Influence of ", min_effect_size=0.003, n_vis=1000):
 
     C_vis = make_C_vis(C, n_vis)
@@ -95,9 +95,9 @@ def plot_heterogeneous(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
         C_j = C_vis.copy()
         C_j[:, :j] = 0.
         C_j[:, j+1:] = 0.
-        all_dataloader = ncr.dataloader(utils.prepend_zero(C_vis),
-                                        utils.prepend_zero(np.zeros((len(C_vis), X.shape[1]))),
-                                        utils.prepend_zero(np.zeros((len(C_vis), Y.shape[1]))),
+        all_dataloader = make_dataloader(utils.prepend_zero(C_j),
+                                        utils.prepend_zero(np.zeros((len(C_j), X.shape[1]))),
+                                        utils.prepend_zero(np.zeros((len(C_j), Y.shape[1]))),
                                         batch_size=16)
         (models, mus) = trainer.predict_params(ncr, all_dataloader)
         models = np.squeeze(models[1:]) # Heterogeneous Effects
@@ -114,7 +114,7 @@ def plot_heterogeneous(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
                     x_ticks=x_ticks, x_ticklabels=x_classes)
 
 
-def plot_hallucinations(ncr, trainer, X, C, Y, models, mus, compressor,
+def plot_hallucinations(ncr, trainer, make_dataloader, X, C, Y, models, mus, compressor,
     target_probs=np.linspace(0.1, 0.9, 9)):
     plt.figure(figsize=(10, 10))
     hallucinated_all = []
@@ -130,7 +130,8 @@ def plot_hallucinations(ncr, trainer, X, C, Y, models, mus, compressor,
         deltas = np.expand_dims(deltas, 1)
         hallucinated = X + deltas*models
         # TODO: pass in predict function
-        hallucinated_dataloader = ncr.dataloader(utils.prepend_zero(C),
+        hallucinated_dataloader = make_dataloader(
+            utils.prepend_zero(C),
                                                  utils.prepend_zero(hallucinated),
                                                  np.squeeze(utils.prepend_zero(Y)),
                                                  batch_size=16)
