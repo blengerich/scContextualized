@@ -39,6 +39,11 @@ def plot_homogeneous_context(ncr, trainer, C, X, Y, encoders, C_means, C_stds,
             can visualize these effects on the correct data manifold.""")
         C_vis = make_C_vis(C, n_vis)
     for j in range(C.shape[1]):
+        vals_to_plot = np.linspace(
+            np.min(C.values[:, j]), 
+            np.max(C.values[:, j]), 
+            1000
+        )
         C_j = C_vis.copy()
         C_j[:, :j] = 0.
         C_j[:, j+1:] = 0.
