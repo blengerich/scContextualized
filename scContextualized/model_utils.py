@@ -1,6 +1,8 @@
 
 from sklearn.model_selection import train_test_split
 import numpy as np
+
+
 class BootstrapCR():
     def __init__(self, n_bootstraps, make_ncr, make_trainer,
                 C_train, X_train, Y_train,
