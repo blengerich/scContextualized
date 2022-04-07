@@ -1,5 +1,5 @@
 ![Preview](scContextualized_logo.png)
-
+[![Build Status](https://app.travis-ci.com/blengerich/scContextualized.svg?token=sv5nLmErKzRWcYs6TSaj&branch=master)](https://app.travis-ci.com/blengerich/scContextualized)
 
 Handlers and utilities for single-cell analysis using the [Contextualized](https://github.com/cnellington/contextualized) package.
 
