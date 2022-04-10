@@ -2,7 +2,9 @@
 from sklearn.model_selection import train_test_split
 import numpy as np
 
+from EasyContextualized.wrappers import BootstrapCR
 
+"""
 class BootstrapCR():
     def __init__(self, n_bootstraps, make_ncr, make_trainer,
                 C_train, X_train, Y_train,
@@ -41,3 +43,4 @@ class BootstrapCR():
         if individual_preds:
             return models, mus
         return np.mean(models, axis=0), np.mean(mus, axis=0)
+"""

@@ -61,6 +61,7 @@ def plot_homogeneous_context(predict_params, C, X, Y, encoders, C_means, C_stds,
 
 def plot_homogeneous_tx(predict_params, C, X, Y, X_names,
     ylabel="Odds Ratio of Outcome", min_effect_size=1.1):
+    # TODO: Barchart?
     C_vis = np.zeros_like(C.values)
     X_vis = make_grid_mat(X, 1000)
     (models, mus) = predict_params(
