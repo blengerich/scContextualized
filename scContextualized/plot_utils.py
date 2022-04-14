@@ -40,8 +40,8 @@ def plot_homogeneous_context(predict_params, C, X, Y, encoders, C_means, C_stds,
         C_vis = make_C_vis(C, n_vis)
     for j in range(C.shape[1]):
         vals_to_plot = np.linspace(
-            np.min(C.values[:, j]), 
-            np.max(C.values[:, j]), 
+            np.min(C.values[:, j]),
+            np.max(C.values[:, j]),
             1000
         )
         C_j = C_vis.copy()
@@ -164,7 +164,7 @@ def plot_hallucinations(predict_y, X, C, Y, models, mus, compressor,
 
 
 def plot_lowdim_rep(low_dim, labels, xlabel="Expression PC 1", ylabel="Expression PC 2",
-    min_samples=100, figname=None, cbar_label=None, discrete=False):
+    min_samples=100, figname=None, cbar_label=None, discrete=False, title=""):
 
     if len(set(labels)) < 40: # discrete labels
         discrete = True
@@ -204,6 +204,7 @@ def plot_lowdim_rep(low_dim, labels, xlabel="Expression PC 1", ylabel="Expressio
     plt.ylabel(ylabel, fontsize=48)
     plt.xticks([])
     plt.yticks([])
+    plt.title(title, fontsize=52)
 
     # create a second axes for the colorbar
     ax2 = fig.add_axes([0.95, 0.15, 0.03, 0.7])
