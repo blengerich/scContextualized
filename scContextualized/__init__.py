@@ -1,2 +1,3 @@
 
-from EasyContextualized.wrappers import ContextualizedRegressor, ContextualizedClassifier
+from EasyContextualized.ContextualizedRegressor import ContextualizedRegressor
+from EasyContextualized.ContextualizedClassifier import ContextualizedClassifier
