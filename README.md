@@ -5,5 +5,6 @@ Handlers and utilities for single-cell analysis using the [Contextualized](https
 
 ## Install and Use scContextualized
 ```
+pip install git+https://github.com/cnellington/Contextualized.git
 pip install git+https://github.com/blengerich/scContextualized.git
 ```
