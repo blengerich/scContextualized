@@ -1,3 +1,3 @@
 
-from EasyContextualized.ContextualizedRegressor import ContextualizedRegressor
-from EasyContextualized.ContextualizedClassifier import ContextualizedClassifier
+from contextualized.easy.ContextualizedRegressor import ContextualizedRegressor
+from contextualized.easy.ContextualizedClassifier import ContextualizedClassifier

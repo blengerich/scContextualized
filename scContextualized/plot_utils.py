@@ -6,6 +6,22 @@ import matplotlib as mpl
 from scContextualized import utils
 
 
+def plot_embedding_for_all_covars(reps, covars_df, covars_stds=None, covars_means=None, covars_encoders=None):
+    for i, covar in enumerate(covars_df.columns):
+        my_labels = covars_df.iloc[:, i].values
+        if covars_stds is not None:
+            my_labels *= covars_stds
+        if covars_means is not None:
+            my_labels += covars_means
+        if covars_encoders is not None:
+            my_labels = covars_encoders[i].inverse_transform(my_labels.astype(int))
+        try:
+            plot_lowdim_rep(reps[:, :2], my_labels,
+                        cbar_label=covar, min_samples=0)
+        except:
+            print("Error with covar {}".format(covar))
+
+
 def make_grid_mat(ar, n_vis):
     ar_vis = np.zeros((n_vis, ar.shape[1]))
     for j in range(ar.shape[1]):
