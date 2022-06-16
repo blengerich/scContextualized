@@ -28,13 +28,16 @@ def make_grid_mat(ar, n_vis):
         ar_vis[:, j] = np.linspace(np.min(ar[:, j]), np.max(ar[:, j]), n_vis)
     return ar_vis
 
+
 def make_C_vis(C, n_vis):
     return make_grid_mat(C.values, n_vis)
 
 
-def simple_plot(xs, ys, x_label, y_label,
+def simple_plot(xs, ys, x_label, y_label, y_lowers=None, y_uppers=None,
     x_ticks=None, x_ticklabels=None, y_ticks=None, y_ticklabels=None):
     fig = plt.figure()
+    if y_lowers is not None and y_uppers is not None:
+        plt.fill_between(xs, np.squeeze(y_lowers), np.squeeze(y_uppers), alpha=0.2)
     plt.plot(xs, ys)
     plt.xlabel(x_label)
     plt.ylabel(y_label)
@@ -45,7 +48,7 @@ def simple_plot(xs, ys, x_label, y_label,
     plt.show()
 
 
-def plot_homogeneous_context(predict_params, C, X, Y, encoders, C_means, C_stds,
+def plot_homogeneous_context(predict_params, C, encoders, C_means, C_stds,
     ylabel="Odds Ratio of Outcome", C_vis=None, n_vis=1000, min_effect_size=1.1):
     print("Estimating Homogeneous Contextual Effects.")
     if C_vis is None:
@@ -63,51 +66,80 @@ def plot_homogeneous_context(predict_params, C, X, Y, encoders, C_means, C_stds,
         C_j = C_vis.copy()
         C_j[:, :j] = 0.
         C_j[:, j+1:] = 0.
-        (_, mus) = predict_params(
-            utils.prepend_zero(C_j),
-            utils.prepend_zero(np.zeros((len(C_j), X.shape[1]))),
-            utils.prepend_zero(np.zeros((len(C_j), Y.shape[1])))
-        )
-        #models = np.squeeze(models[1:]) # Heterogeneous Effects
-        mus = np.squeeze(mus[1:]) # Homogeneous Effects
+        try:
+            (_, mus) = predict_params(utils.prepend_zero(C_j),
+                individual_preds=True
+            )
+            means = np.squeeze(np.mean(mus[:, 1:])) # Homogeneous Effects
+            lowers = np.percentile(mus[:, 1:], 2.5, axis=0)
+            uppers = np.percentile(mus[:, 1:], 97.5, axis=0)
+        except:
+            (_, mus) = predict_params(
+                utils.prepend_zero(C_j),
+            )
+            means = np.squeeze(mus[1:]) # Homogeneous Effects
+            lowers, uppers = None, None
+        effect = np.exp(means - np.min(means))
+        try:
+            lowers -= np.min(means)
+            uppers -= np.min(means)
+        except:
+            pass
         x_classes = encoders[j].classes_
         x_ticks = (np.array(list(range(len(x_classes)))) - C_means[j]) / C_stds[j]
 
-        effect = np.exp(mus - np.min(mus))
         if np.max(effect) > min_effect_size:
             simple_plot(vals_to_plot, effect,
                 x_label=C.columns.tolist()[j], y_label=ylabel,
+                y_lowers=lowers, y_uppers=uppers,
                 x_ticks=x_ticks, x_ticklabels=x_classes)
 
 
-def plot_homogeneous_tx(predict_params, C, X, Y, X_names,
+def plot_homogeneous_tx(predict_params, C, X, X_names,
     ylabel="Odds Ratio of Outcome", min_effect_size=1.1):
     # TODO: Barchart?
     C_vis = np.zeros_like(C.values)
     X_vis = make_grid_mat(X, 1000)
     (models, mus) = predict_params(
         utils.prepend_zero(C_vis),
-        utils.prepend_zero(np.zeros((len(C_vis), X.shape[1]))),
-        utils.prepend_zero(np.zeros((len(C_vis), Y.shape[1]))),
     )
     models = np.squeeze(models[1:]) # Heterogeneous Effects
     homogeneous_tx_effects = np.mean(models, axis=0)
+    try:
+        (models, mus) = predict_params(
+            utils.prepend_zero(C_vis),
+            individual_preds=True
+        )
+        models = np.squeeze(models[:, 1:]) # Heterogeneous Effects
+        lowers = np.percentile(np.mean(models, axis=1), 2.5, axis=0)
+        uppers = np.percentile(np.mean(models, axis=1), 97.5, axis=0)
+    except:
+        pass
     effects = []
-    for k in range(models.shape[1]):
+    for k in range(models.shape[-1]):
         effect = homogeneous_tx_effects[k]*X_vis[:, k]
-        effect -= np.mean(effect)
+        effect -= np.min(effect)
         effects.append(np.max(effect))
-    for (k, _) in reversed(sorted(enumerate(effects), key=lambda x: x[1])):
+    for (k, _) in reversed(sorted(enumerate(effects), key=lambda x: x[1])): # order by decreasing impact
         effect = homogeneous_tx_effects[k]*X_vis[:, k]
-        effect -= np.mean(effect)
+        my_min = np.min(effect)
+        effect -= my_min
         effect = np.exp(effect)
+        try:
+            my_lowers = lowers[k]*X_vis[:, k]
+            my_uppers = uppers[k]*X_vis[:, k]
+            my_lowers = np.exp(my_lowers-my_min)
+            my_uppers = np.exp(my_uppers-my_min)
+        except:
+            my_lowers, my_uppers = None, None
         if np.max(effect) > min_effect_size:
             simple_plot(X_vis[:, k], effect,
                 x_label="Expression of {}".format(X_names[k]),
-                y_label=ylabel)
+                y_label=ylabel,
+                y_lowers=my_lowers, y_uppers=my_uppers)
 
 
-def plot_heterogeneous(predict_params, C, X, Y, encoders, C_means, C_stds,
+def plot_heterogeneous(predict_params, C, X, encoders, C_means, C_stds,
     X_names, ylabel="Influence of ", min_effect_size=0.003, n_vis=1000):
 
     C_vis = make_C_vis(C, n_vis)
@@ -117,20 +149,35 @@ def plot_heterogeneous(predict_params, C, X, Y, encoders, C_means, C_stds,
         C_j[:, j+1:] = 0.
         (models, mus) = predict_params(
             utils.prepend_zero(C_j),
-            utils.prepend_zero(np.zeros((len(C_j), X.shape[1]))),
-            utils.prepend_zero(np.zeros((len(C_j), Y.shape[1])))
         )
-        models = np.squeeze(models[1:]) # Heterogeneous Effects
+        models = np.squeeze(models[1:])  # Heterogeneous Effects
         heterogeneous_effects = models - np.mean(models, axis=0)
+
+        try:
+            (models, mus) = predict_params(
+                utils.prepend_zero(C_j),
+                individual_preds=True
+            )
+            models = np.squeeze(models[:, 1:])  # Heterogeneous Effects
+            means = np.mean(models, axis=1)
+            my_lowers = np.percentile(models - means, 2.5, axis=0)
+            my_uppers = np.percentile(models - means, 97.5, axis=0)
+        except:
+            my_lowers, my_uppers = None, None
 
         x_classes = encoders[j].classes_
         x_ticks = (np.array(list(range(len(x_classes)))) - C_means[j]) / C_stds[j]
-        for k in range(models.shape[1]):
+        for k in range(heterogeneous_effects.shape[1]):
+            try:
+                my_lowers, my_uppers = lowers[:, k], uppers[:, k]
+            except:
+                my_lowers, my_uppers = None, None
             if np.max(heterogeneous_effects[:, k]) > min_effect_size:
                 simple_plot(
                     C_vis[:, j], heterogeneous_effects[:, k],
                     x_label=C.columns.tolist()[j],
                     y_label="{}{}".format(ylabel, X_names[k]),
+                    y_lowers=my_lowers, y_uppers=my_uppers,
                     x_ticks=x_ticks, x_ticklabels=x_classes)
 
 
