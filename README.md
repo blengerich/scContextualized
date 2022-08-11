@@ -1,7 +1,11 @@
 ![Preview](assets/scContextualized_logo.png)
-[![Build Status](https://app.travis-ci.com/blengerich/scContextualized.svg?token=sv5nLmErKzRWcYs6TSaj&branch=master)](https://app.travis-ci.com/blengerich/scContextualized)
+![pylint Score](pylint.svg)
+![License](https://img.shields.io/github/license/blengerich/scContextualized.svg?style=flat-square)
+![Maintenance](https://img.shields.io/maintenance/yes/2022?style=flat-square)
 
-Handlers and utilities for single-cell analysis using the [Contextualized](https://github.com/cnellington/contextualized) package.
+
+Handlers and utilities for single-cell omics analysis using [Contextualized.ML](https://github.com/cnellington/contextualized).
+
 
 ## Install and Use scContextualized
 ```
