@@ -140,7 +140,7 @@ def plot_homogeneous_tx(predict_params, C, X, X_names,
 
 
 def plot_heterogeneous(predict_params, C, X, encoders, C_means, C_stds,
-    X_names, ylabel="Influence of ", min_effect_size=0.003, n_vis=1000):
+    X_names, ylabel="Influence of ", min_effect_size=0.003, n_vis=1000, max_classes_for_discrete=10):
 
     C_vis = make_C_vis(C, n_vis)
     for j in range(C.shape[1]):
@@ -165,8 +165,16 @@ def plot_heterogeneous(predict_params, C, X, encoders, C_means, C_stds,
         except:
             my_lowers, my_uppers = None, None
 
-        x_classes = encoders[j].classes_
-        x_ticks = (np.array(list(range(len(x_classes)))) - C_means[j]) / C_stds[j]
+        # TODO: Fix for continuous-valued C.
+        x_ticks = None
+        x_ticklabels = None
+        try:
+            x_classes = encoders[j].classes_
+            if len(x_classes) <= max_classes_for_discrete:
+                x_ticks = (np.array(list(range(len(x_classes)))) - C_means[j]) / C_stds[j]
+                x_ticklabels = x_classes
+        except:
+            pass
         for k in range(heterogeneous_effects.shape[1]):
             try:
                 my_lowers, my_uppers = lowers[:, k], uppers[:, k]
@@ -178,7 +186,7 @@ def plot_heterogeneous(predict_params, C, X, encoders, C_means, C_stds,
                     x_label=C.columns.tolist()[j],
                     y_label="{}{}".format(ylabel, X_names[k]),
                     y_lowers=my_lowers, y_uppers=my_uppers,
-                    x_ticks=x_ticks, x_ticklabels=x_classes)
+                    x_ticks=x_ticks, x_ticklabels=x_ticklabels)
 
 
 def plot_hallucinations(predict_y, X, C, Y, models, mus, compressor,
