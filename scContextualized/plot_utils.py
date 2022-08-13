@@ -7,6 +7,15 @@ from scContextualized import utils
 
 
 def plot_embedding_for_all_covars(reps, covars_df, covars_stds=None, covars_means=None, covars_encoders=None):
+    """
+
+    :param reps: 
+    :param covars_df: 
+    :param covars_stds:  (Default value = None)
+    :param covars_means:  (Default value = None)
+    :param covars_encoders:  (Default value = None)
+
+    """
     for i, covar in enumerate(covars_df.columns):
         my_labels = covars_df.iloc[:, i].values
         if covars_stds is not None:
@@ -23,6 +32,12 @@ def plot_embedding_for_all_covars(reps, covars_df, covars_stds=None, covars_mean
 
 
 def make_grid_mat(ar, n_vis):
+    """
+
+    :param ar: 
+    :param n_vis: 
+
+    """
     ar_vis = np.zeros((n_vis, ar.shape[1]))
     for j in range(ar.shape[1]):
         ar_vis[:, j] = np.linspace(np.min(ar[:, j]), np.max(ar[:, j]), n_vis)
@@ -30,11 +45,31 @@ def make_grid_mat(ar, n_vis):
 
 
 def make_C_vis(C, n_vis):
+    """
+
+    :param C: 
+    :param n_vis: 
+
+    """
     return make_grid_mat(C.values, n_vis)
 
 
 def simple_plot(xs, ys, x_label, y_label, y_lowers=None, y_uppers=None,
     x_ticks=None, x_ticklabels=None, y_ticks=None, y_ticklabels=None):
+    """
+
+    :param xs: 
+    :param ys: 
+    :param x_label: 
+    :param y_label: 
+    :param y_lowers:  (Default value = None)
+    :param y_uppers:  (Default value = None)
+    :param x_ticks:  (Default value = None)
+    :param x_ticklabels:  (Default value = None)
+    :param y_ticks:  (Default value = None)
+    :param y_ticklabels:  (Default value = None)
+
+    """
     fig = plt.figure()
     if y_lowers is not None and y_uppers is not None:
         plt.fill_between(xs, np.squeeze(y_lowers), np.squeeze(y_uppers), alpha=0.2)
@@ -50,6 +85,19 @@ def simple_plot(xs, ys, x_label, y_label, y_lowers=None, y_uppers=None,
 
 def plot_homogeneous_context(predict_params, C, encoders, C_means, C_stds,
     ylabel="Odds Ratio of Outcome", C_vis=None, n_vis=1000, min_effect_size=1.1):
+    """
+
+    :param predict_params: 
+    :param C: 
+    :param encoders: 
+    :param C_means: 
+    :param C_stds: 
+    :param ylabel:  (Default value = "Odds Ratio of Outcome")
+    :param C_vis:  (Default value = None)
+    :param n_vis:  (Default value = 1000)
+    :param min_effect_size:  (Default value = 1.1)
+
+    """
     print("Estimating Homogeneous Contextual Effects.")
     if C_vis is None:
         print("""Generating visualizing datapoints by assuming the encoder is
@@ -97,6 +145,16 @@ def plot_homogeneous_context(predict_params, C, encoders, C_means, C_stds,
 
 def plot_homogeneous_tx(predict_params, C, X, X_names,
     ylabel="Odds Ratio of Outcome", min_effect_size=1.1):
+    """
+
+    :param predict_params: 
+    :param C: 
+    :param X: 
+    :param X_names: 
+    :param ylabel:  (Default value = "Odds Ratio of Outcome")
+    :param min_effect_size:  (Default value = 1.1)
+
+    """
     # TODO: Barchart?
     C_vis = np.zeros_like(C.values)
     X_vis = make_grid_mat(X, 1000)
@@ -141,6 +199,21 @@ def plot_homogeneous_tx(predict_params, C, X, X_names,
 
 def plot_heterogeneous(predict_params, C, X, encoders, C_means, C_stds,
     X_names, ylabel="Influence of ", min_effect_size=0.003, n_vis=1000, max_classes_for_discrete=10):
+    """
+
+    :param predict_params: 
+    :param C: 
+    :param X: 
+    :param encoders: 
+    :param C_means: 
+    :param C_stds: 
+    :param X_names: 
+    :param ylabel:  (Default value = "Influence of ")
+    :param min_effect_size:  (Default value = 0.003)
+    :param n_vis:  (Default value = 1000)
+    :param max_classes_for_discrete:  (Default value = 10)
+
+    """
 
     C_vis = make_C_vis(C, n_vis)
     for j in range(C.shape[1]):
@@ -192,6 +265,20 @@ def plot_heterogeneous(predict_params, C, X, encoders, C_means, C_stds,
 def plot_hallucinations(predict_y, X, C, Y, models, mus, compressor,
     target_probs=np.linspace(0.1, 0.9, 9)
     ):
+    """
+
+    :param predict_y: 
+    :param X: 
+    :param C: 
+    :param Y: 
+    :param models: 
+    :param mus: 
+    :param compressor: 
+    :param target_probs:  (Default value = np.linspace(0.1)
+    :param 0.9: 
+    :param 9): 
+
+    """
     plt.figure(figsize=(10, 10))
     hallucinated_all = []
 
@@ -236,6 +323,19 @@ def plot_hallucinations(predict_y, X, C, Y, models, mus, compressor,
 
 def plot_lowdim_rep(low_dim, labels, xlabel="Expression PC 1", ylabel="Expression PC 2",
     min_samples=100, figname=None, cbar_label=None, discrete=False, title=""):
+    """
+
+    :param low_dim: 
+    :param labels: 
+    :param xlabel:  (Default value = "Expression PC 1")
+    :param ylabel:  (Default value = "Expression PC 2")
+    :param min_samples:  (Default value = 100)
+    :param figname:  (Default value = None)
+    :param cbar_label:  (Default value = None)
+    :param discrete:  (Default value = False)
+    :param title:  (Default value = "")
+
+    """
 
     if len(set(labels)) < 40: # discrete labels
         discrete = True
