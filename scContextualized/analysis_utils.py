@@ -1,19 +1,32 @@
+"""
+Utilities for post-hoc analysis of trained Contextualized models.
+"""
+
 import numpy as np
 from sklearn.metrics import roc_auc_score as roc
 
 
-def print_acc_by_covars(Y_train, train_preds, Y_test, test_preds,
-                        covar_df, train_idx, test_idx,
-                        covar_stds=None, covar_means=None, covar_encoders=None):
+def print_acc_by_covars(
+    Y_train,
+    train_preds,
+    Y_test,
+    test_preds,
+    covar_df,
+    train_idx,
+    test_idx,
+    covar_stds=None,
+    covar_means=None,
+    covar_encoders=None,
+):
     """
 
-    :param Y_train: 
-    :param train_preds: 
-    :param Y_test: 
-    :param test_preds: 
-    :param covar_df: 
-    :param train_idx: 
-    :param test_idx: 
+    :param Y_train:
+    :param train_preds:
+    :param Y_test:
+    :param test_preds:
+    :param covar_df:
+    :param train_idx:
+    :param test_idx:
     :param covar_stds:  (Default value = None)
     :param covar_means:  (Default value = None)
     :param covar_encoders:  (Default value = None)
@@ -31,22 +44,30 @@ def print_acc_by_covars(Y_train, train_preds, Y_test, test_preds,
             pass
         if len(set(my_labels)) > 20:
             continue
-        print("="*20)
+        print("=" * 20)
         print(covar)
-        print('-'*10)
+        print("-" * 10)
         for label in sorted(set(my_labels)):
             try:
-                train_roc = roc(Y_train[my_labels[train_idx] == label],
-                                np.squeeze(train_preds)[my_labels[train_idx] == label])
+                train_roc = roc(
+                    Y_train[my_labels[train_idx] == label],
+                    np.squeeze(train_preds)[my_labels[train_idx] == label],
+                )
             except (IndexError, ValueError):
                 train_roc = np.nan
             try:
-                test_roc  = roc(Y_test[my_labels[test_idx] == label],
-                                np.squeeze(test_preds)[my_labels[test_idx] == label])
+                test_roc = roc(
+                    Y_test[my_labels[test_idx] == label],
+                    np.squeeze(test_preds)[my_labels[test_idx] == label],
+                )
             except (IndexError, ValueError):
                 test_roc = np.nan
-            print("{}:\t Train ROC: {:.2f}, Test ROC: {:.2f}".format(label, train_roc, test_roc))
-        print('='*20)
+            print(
+                "{}:\t Train ROC: {:.2f}, Test ROC: {:.2f}".format(
+                    label, train_roc, test_roc
+                )
+            )
+        print("=" * 20)
 
 
 """
