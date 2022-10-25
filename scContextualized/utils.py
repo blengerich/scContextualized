@@ -5,7 +5,7 @@ Miscellaneous utility functions.
 import numpy as np
 
 
-def sigmoid(x, slope=1):
+def sigmoid(x_in, slope=1):
     """
 
     :param x: float input value
@@ -14,10 +14,10 @@ def sigmoid(x, slope=1):
     returns 1/(1+exp(-slope*x))
 
     """
-    return 1.0 / (1.0 + np.exp(-slope * x))
+    return 1.0 / (1.0 + np.exp(-slope * x_in))
 
 
-def inv_sigmoid(x, slope=1):
+def inv_sigmoid(x_in, slope=1):
     """
     inv_sigmoid(sigmoid(x)) = x
 
@@ -25,10 +25,10 @@ def inv_sigmoid(x, slope=1):
     :param slope:  (Default value = 1)
 
     """
-    return (1.0 / slope) * np.log(x / (1 - x))
+    return (1.0 / slope) * np.log(x_in / (1 - x_in))
 
 
-def to_lodds(x):
+def to_lodds(x_in):
     """
 
     :param x: float probability
@@ -36,10 +36,10 @@ def to_lodds(x):
     return log-odds
 
     """
-    return -np.log(1.0 / x - 1)
+    return -np.log(1.0 / x_in - 1)
 
 
-def prepend_zero(ar):
+def prepend_zero(ar_in):
     """
 
     :param ar: np array
@@ -47,7 +47,7 @@ def prepend_zero(ar):
     returns ar with a zero at front
 
     """
-    return np.vstack((np.zeros((1, ar.shape[-1])), ar))
+    return np.vstack((np.zeros((1, ar_in.shape[-1])), ar_in))
 
 
 

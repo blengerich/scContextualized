@@ -11,17 +11,9 @@ from scContextualized import utils
 
 
 def simple_plot(
-    xs,
-    ys,
-    x_label,
-    y_label,
-    y_lowers=None,
-    y_uppers=None,
-    x_ticks=None,
-    x_ticklabels=None,
-    y_ticks=None,
-    y_ticklabels=None,
-    **kwargs
+    x_vals,
+    y_vals,
+    **kwargs,
 ):
     """
 
@@ -37,24 +29,27 @@ def simple_plot(
     :param y_ticklabels:  (Default value = None)
 
     """
-    fig = plt.figure()
-    if y_lowers is not None and y_uppers is not None:
-        plt.fill_between(xs, np.squeeze(y_lowers), np.squeeze(y_uppers),
-        alpha=kwargs.get('fill_alpha', 0.2), color=kwargs.get('fill_color', 'blue'))
-    plt.plot(xs, ys)
-    plt.xlabel(x_label)
-    plt.ylabel(y_label)
-    if x_ticks is not None:
-        plt.xticks(x_ticks, x_ticklabels)
-    if y_ticks is not None:
-        plt.yticks(y_ticks, y_ticklabels)
+    plt.figure(figsize=kwargs.get('figsize', (8, 8)))
+    if 'y_lowers' in kwargs and 'y_uppers' in kwargs:
+        plt.fill_between(
+            x_vals,
+            np.squeeze(kwargs['y_lowers']),
+            np.squeeze(kwargs['y_uppers']),
+            alpha=kwargs.get("fill_alpha", 0.2),
+            color=kwargs.get("fill_color", "blue"),
+        )
+    plt.plot(x_vals, y_vals)
+    plt.xlabel(kwargs.get('x_label', 'X'))
+    plt.ylabel(kwargs.get('y_label', 'Y'))
+    if 'x_ticks' in kwargs and 'x_ticklabels' in kwargs:
+        plt.xticks(kwargs['x_ticks'], kwargs['x_ticklabels'])
+    if 'y_ticks' in kwargs and 'y_ticklabels' in kwargs:
+        plt.yticks(kwargs['y_ticks'], kwargs['y_ticklabels'])
     plt.show()
 
 
 def plot_embedding_for_all_covars(
-    reps, covars_df,
-    covars_stds=None, covars_means=None, covars_encoders=None,
-    **kwargs
+    reps, covars_df, covars_stds=None, covars_means=None, covars_encoders=None, **kwargs
 ):
     """
 
@@ -73,12 +68,21 @@ def plot_embedding_for_all_covars(
             my_labels += covars_means
         if covars_encoders is not None:
             my_labels = covars_encoders[i].inverse_transform(my_labels.astype(int))
-        if kwargs.get('dithering_pct', 0.) > 0:
-            reps[:, 0] += np.random.normal(0, kwargs['dithering_pct']*np.std(reps[:, 0]), size=reps[:, 0].shape)
-            reps[:, 1] += np.random.normal(0, kwargs['dithering_pct']*np.std(reps[:, 1]), size=reps[:, 1].shape)
+        if kwargs.get("dithering_pct", 0.0) > 0:
+            reps[:, 0] += np.random.normal(
+                0, kwargs["dithering_pct"] * np.std(reps[:, 0]), size=reps[:, 0].shape
+            )
+            reps[:, 1] += np.random.normal(
+                0, kwargs["dithering_pct"] * np.std(reps[:, 1]), size=reps[:, 1].shape
+            )
         try:
-            plot_lowdim_rep(reps[:, :2], my_labels, cbar_label=covar,
-                min_samples=kwargs.get('min_samples', 0), **kwargs)
+            plot_lowdim_rep(
+                reps[:, :2],
+                my_labels,
+                cbar_label=covar,
+                min_samples=kwargs.get("min_samples", 0),
+                **kwargs,
+            )
         except:
             print("Error with covar {}".format(covar))
 
@@ -118,7 +122,7 @@ def plot_homogeneous_context(
     min_effect_size=1.1,
     classification=True,
     verbose=True,
-    **kwargs
+    **kwargs,
 ):
     """
 
@@ -136,8 +140,10 @@ def plot_homogeneous_context(
     if verbose:
         print("Estimating Homogeneous Contextual Effects.")
         if classification:
-            print("""Assuming classification and exponentiating odds ratios.
-            If this is wrong, use classification=False parameter.""")
+            print(
+                """Assuming classification and exponentiating odds ratios.
+            If this is wrong, use classification=False parameter."""
+            )
     if C_vis is None:
         if verbose:
             print(
@@ -148,21 +154,25 @@ def plot_homogeneous_context(
             )
         C_vis = make_C_vis(C, n_vis)
     for j in range(C.shape[1]):
-        vals_to_plot = np.linspace(np.min(C.values[:, j]), np.max(C.values[:, j]), n_vis)
+        vals_to_plot = np.linspace(
+            np.min(C.values[:, j]), np.max(C.values[:, j]), n_vis
+        )
         C_j = C_vis.copy()
         C_j[:, :j] = 0.0
-        C_j[:, j+1:] = 0.0
+        C_j[:, j + 1 :] = 0.0
         try:
             (_, mus) = predict_params(utils.prepend_zero(C_j), individual_preds=True)
             mus = np.squeeze(mus[:, 1:])
             means = np.mean(mus, axis=0)  # Homogeneous Effects
-            lowers = np.percentile(mus, kwargs.get('lower_pct', 2.5), axis=0)
-            uppers = np.percentile(mus, kwargs.get('upper_pct', 97.5), axis=0)
+            lowers = np.percentile(mus, kwargs.get("lower_pct", 2.5), axis=0)
+            uppers = np.percentile(mus, kwargs.get("upper_pct", 97.5), axis=0)
         except:
-            (_, mus) = predict_params(utils.prepend_zero(C_j),)
+            (_, mus) = predict_params(
+                utils.prepend_zero(C_j),
+            )
             means = np.squeeze(mus[1:])  # Homogeneous Effects
             lowers, uppers = None, None
-            
+
         effect = means - np.min(means)
         if lowers is not None and uppers is not None:
             lowers -= np.min(means)
@@ -177,7 +187,7 @@ def plot_homogeneous_context(
             # Line up class values with centered values.
             x_ticks = (np.array(list(range(len(x_classes)))) - C_means[j]) / C_stds[j]
         except:
-            x_classes=None
+            x_classes = None
             x_ticks = None
 
         if np.max(effect) > min_effect_size:
@@ -194,10 +204,15 @@ def plot_homogeneous_context(
 
 
 def plot_homogeneous_tx(
-    predict_params, C, X, X_names, 
-    ylabel="Odds Ratio of Outcome", min_effect_size=1.1,
-    classification=True, 
-    **kwargs):
+    predict_params,
+    C,
+    X,
+    X_names,
+    ylabel="Odds Ratio of Outcome",
+    min_effect_size=1.1,
+    classification=True,
+    **kwargs,
+):
     """
 
     :param predict_params:
@@ -210,13 +225,15 @@ def plot_homogeneous_tx(
     """
     C_vis = np.zeros_like(C.values)
     X_vis = make_grid_mat(X, 1000)
-    (betas, _) = predict_params(C_vis, individual_preds=True)  # boostraps x C_vis x outcomes x predictors
+    (betas, _) = predict_params(
+        C_vis, individual_preds=True
+    )  # boostraps x C_vis x outcomes x predictors
     homogeneous_betas = np.mean(betas, axis=1)  # bootstraps x outcomes x predictors
     for outcome in range(homogeneous_betas.shape[1]):
         betas = homogeneous_betas[:, outcome, :]  # bootstraps x predictors
         my_avg_betas = np.mean(betas, axis=0)
-        lowers = np.percentile(betas, kwargs.get('lower_pct', 2.5), axis=0)
-        uppers = np.percentile(betas, kwargs.get('upper_pct', 97.5), axis=0)
+        lowers = np.percentile(betas, kwargs.get("lower_pct", 2.5), axis=0)
+        uppers = np.percentile(betas, kwargs.get("upper_pct", 97.5), axis=0)
         max_impacts = []
         # Calculate the max impact of each effect.
         for k in range(my_avg_betas.shape[0]):
@@ -226,13 +243,14 @@ def plot_homogeneous_tx(
                 effect_range = np.exp(effect_range)
             max_impacts.append(effect_range)
         effects_by_desc_impact = np.argsort(max_impacts)[::-1]
-        
+
         # Plot Booleans all together.
         # TODO: Share this code with the context plotting.
-        boolean_vars = [j for j in range(X.shape[-1]) if len(set(X[:, j]))==2]
+        boolean_vars = [j for j in range(X.shape[-1]) if len(set(X[:, j])) == 2]
         if len(boolean_vars) > 0:
             impacts = [max_impacts[j] for j in boolean_vars]
-            fig = plt.figure(figsize=figsize)
+            names = [X_names[j] for j in boolean_vars]
+            plt.figure(figsize=kwargs.get('figsize', (12, 8)))
             sorted_i = np.argsort(impacts)
             upper_impact = np.max([0, np.max(uppers[i]) - impacts[i]])
             if classification:
@@ -247,13 +265,19 @@ def plot_homogeneous_tx(
                     yerr=upper_impact,
                 )  # Assume symmetric error.
             plt.xticks(
-                range(len(names)), np.array(names)[sorted_i],
-                rotation=60, fontsize=ticksize, ha='right')
-            plt.ylabel(kwargs.get("ylabel", "Odds Ratio of Outcome"),
-                fontsize=kwargs.get('ylabel_fontsize', 32))
-            plt.yticks(fontsize=kwargs.get('ytick_fontsize', ticksize))
-            if kwargs.get('bool_figname', None) is not None:
-                plt.savefig(kwargs.get('bool_figname'), dpi=300, bbox_inches="tight")
+                range(len(names)),
+                np.array(names)[sorted_i],
+                rotation=60,
+                fontsize=kwargs.get('boolean_x_ticksize', 18),
+                ha="right",
+            )
+            plt.ylabel(
+                kwargs.get("ylabel", "Odds Ratio of Outcome"),
+                fontsize=kwargs.get("ylabel_fontsize", 32),
+            )
+            plt.yticks(fontsize=kwargs.get("ytick_fontsize", 18))
+            if kwargs.get("bool_figname", None) is not None:
+                plt.savefig(kwargs.get("bool_figname"), dpi=300, bbox_inches="tight")
             else:
                 plt.show()
 
@@ -279,7 +303,7 @@ def plot_homogeneous_tx(
                     y_lowers=my_lowers,
                     y_uppers=my_uppers,
                 )
-    
+
 
 def plot_heterogeneous(
     predict_params,
@@ -292,7 +316,7 @@ def plot_heterogeneous(
     min_effect_size=0.003,
     n_vis=1000,
     max_classes_for_discrete=10,
-    **kwargs
+    **kwargs,
 ):
     """
 
@@ -315,25 +339,33 @@ def plot_heterogeneous(
         C_j = C_vis.copy()
         C_j[:, :j] = 0.0
         C_j[:, j + 1 :] = 0.0
-        (models, mus) = predict_params(C_j, individual_preds=True)  # n_bootstraps x n_vis x outcomes x predictors
-        homogeneous_effects = np.mean(models, axis=1) # n_bootstraps x outcomes x predictors
+        (models, mus) = predict_params(
+            C_j, individual_preds=True
+        )  # n_bootstraps x n_vis x outcomes x predictors
+        homogeneous_effects = np.mean(
+            models, axis=1
+        )  # n_bootstraps x outcomes x predictors
         heterogeneous_effects = models.copy()
         for i in range(n_vis):
             heterogeneous_effects[:, i] -= homogeneous_effects
         # n_bootstraps x n_vis x outcomes x predictors
-        
+
         for outcome in range(heterogeneous_effects.shape[2]):
-            my_effects = heterogeneous_effects[:, :, outcome, :]  # n_bootstraps x n_vis x predictors
+            my_effects = heterogeneous_effects[
+                :, :, outcome, :
+            ]  # n_bootstraps x n_vis x predictors
             means = np.mean(my_effects, axis=0)  # n_vis x predictors
-            my_lowers = np.percentile(my_effects, kwargs.get('lower_pct', 2.5), axis=0)
-            my_uppers = np.percentile(my_effects, kwargs.get('upper_pct', 97.5), axis=0)
-    
+            my_lowers = np.percentile(my_effects, kwargs.get("lower_pct", 2.5), axis=0)
+            my_uppers = np.percentile(my_effects, kwargs.get("upper_pct", 97.5), axis=0)
+
             x_ticks = None
             x_ticklabels = None
             try:
                 x_classes = encoders[j].classes_
                 if len(x_classes) <= max_classes_for_discrete:
-                    x_ticks = (np.array(list(range(len(x_classes)))) - C_means[j]) / C_stds[j]
+                    x_ticks = (
+                        np.array(list(range(len(x_classes)))) - C_means[j]
+                    ) / C_stds[j]
                     x_ticklabels = x_classes
             except:
                 pass
@@ -348,7 +380,7 @@ def plot_heterogeneous(
                         y_uppers=my_uppers[:, k],
                         x_ticks=x_ticks,
                         x_ticklabels=x_ticklabels,
-                        **kwargs
+                        **kwargs,
                     )
 
 
@@ -441,7 +473,7 @@ def plot_lowdim_rep(
     cbar_label=None,
     discrete=False,
     title="",
-    **kwargs
+    **kwargs,
 ):
     """
 
@@ -457,7 +489,7 @@ def plot_lowdim_rep(
 
     """
 
-    if len(set(labels)) < kwargs.get('max_classes_for_discrete', 10):  # discrete labels
+    if len(set(labels)) < kwargs.get("max_classes_for_discrete", 10):  # discrete labels
         discrete = True
         cmap = plt.cm.jet  # define the colormap
     else:
@@ -489,32 +521,34 @@ def plot_lowdim_rep(
             return
     fig, ax = plt.subplots(1, 1, figsize=(12, 12))  # setup the plot
     if discrete:
-        scat = ax.scatter(
+        ax.scatter(
             low_dim[good_idxs, 0],
             low_dim[good_idxs, 1],
             c=tag,
-            alpha=kwargs.get('alpha', 1.0),
+            alpha=kwargs.get("alpha", 1.0),
             s=100,
             cmap=cmap,
             norm=norm,
         )
     else:
-        scat = ax.scatter(
-            low_dim[:, 0], low_dim[:, 1],
+        ax.scatter(
+            low_dim[:, 0],
+            low_dim[:, 1],
             c=labels,
-            alpha=kwargs.get('alpha', 1.0),
-            s=100, cmap=cmap
+            alpha=kwargs.get("alpha", 1.0),
+            s=100,
+            cmap=cmap,
         )
-    plt.xlabel(xlabel, fontsize=kwargs.get('xlabel_fontsize', 48))
-    plt.ylabel(ylabel, fontsize=kwargs.get('ylabel_fontsize', 48))
+    plt.xlabel(xlabel, fontsize=kwargs.get("xlabel_fontsize", 48))
+    plt.ylabel(ylabel, fontsize=kwargs.get("ylabel_fontsize", 48))
     plt.xticks([])
     plt.yticks([])
-    plt.title(title, fontsize=kwargs.get('title_fontsize', 52))
+    plt.title(title, fontsize=kwargs.get("title_fontsize", 52))
 
     # create a second axes for the colorbar
     ax2 = fig.add_axes([0.95, 0.15, 0.03, 0.7])
     if discrete:
-        cb = mpl.colorbar.ColorbarBase(
+        color_bar = mpl.colorbar.ColorbarBase(
             ax2,
             cmap=cmap,
             norm=norm,
@@ -523,15 +557,15 @@ def plot_lowdim_rep(
             format="%1i",
         )
         try:
-            cb.ax.set(
+            color_bar.ax.set(
                 yticks=bounds[:-1] + 0.5, yticklabels=np.round(tag_names)
             )  # , fontsize=24)
         except:
-            cb.ax.set(yticks=bounds[:-1] + 0.5, yticklabels=tag_names)  # , fontsize=24)
+            color_bar.ax.set(yticks=bounds[:-1] + 0.5, yticklabels=tag_names)
     else:
-        cb = mpl.colorbar.ColorbarBase(ax2, cmap=cmap, format="%.1f")
+        color_bar = mpl.colorbar.ColorbarBase(ax2, cmap=cmap, format="%.1f")
         # cb.ax.set_yticklabels(fontsize=24)
     if cbar_label is not None:
-        cb.ax.set_ylabel(cbar_label, fontsize=32)
+        color_bar.ax.set_ylabel(cbar_label, fontsize=kwargs.get('cbar_fontsize', 32))
     if figname is not None:
         plt.savefig("results/{}.pdf".format(figname), dpi=300, bbox_inches="tight")

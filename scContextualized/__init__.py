@@ -1,6 +1,7 @@
 """
 scContextualized
 
+Version: 0.0.8
 """
 
 from contextualized.easy.ContextualizedRegressor import ContextualizedRegressor

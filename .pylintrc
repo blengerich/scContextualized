@@ -553,16 +553,24 @@ good-names=i,
            k,
            ex,
            Run,
-           X_train,
-           Y_train,
-           X_test,
-           Y_test,
-           ax
+           X, Y, C, W,
+           X_train, X_val, X_test,
+           Y_train, Y_val, Y_test,
+           C_train, C_val, C_test,
+           W_train, W_val, W_test,
+           beta, mu,
+           betas, mus,
+           Y_true, Y_pred,
+           ax,
+           C_means, C_stds, C_vis, C_j,
+           X_means, X_stds, X_vis, X_j
+           X_names, C_names,
+           X_small,
            _
 
 # Good variable names regexes, separated by a comma. If names match any regex,
 # they will always be accepted
-good-names-rgxs=
+good-names-rgxs=scContextualized
 
 # Include a hint for the correct naming format with invalid-name.
 include-naming-hint=no
