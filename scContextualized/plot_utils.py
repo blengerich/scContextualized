@@ -73,6 +73,9 @@ def plot_embedding_for_all_covars(
             my_labels += covars_means
         if covars_encoders is not None:
             my_labels = covars_encoders[i].inverse_transform(my_labels.astype(int))
+        if kwargs.get('dithering_pct', 0.) > 0:
+            reps[:, 0] += np.random.normal(0, kwargs['dithering_pct']*np.std(reps[:, 0]), size=reps[:, 0].shape)
+            reps[:, 1] += np.random.normal(0, kwargs['dithering_pct']*np.std(reps[:, 1]), size=reps[:, 1].shape)
         try:
             plot_lowdim_rep(reps[:, :2], my_labels, cbar_label=covar,
                 min_samples=kwargs.get('min_samples', 0), **kwargs)
