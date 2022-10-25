@@ -50,6 +50,7 @@ def prepend_zero(ar):
     return np.vstack((np.zeros((1, ar.shape[-1])), ar))
 
 
+
 def convert_to_one_hot(col):
     """
 
