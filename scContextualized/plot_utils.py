@@ -289,11 +289,11 @@ def plot_homogeneous_tx(
             effect -= my_min
             if classification:
                 effect = np.exp(effect)
-            my_lowers = lowers[k] * X_vis[:, k]
-            my_uppers = uppers[k] * X_vis[:, k]
+            my_lowers = lowers[k] * X_vis[:, k] - my_min
+            my_uppers = uppers[k] * X_vis[:, k] - my_min
             if classification:
-                my_lowers = np.exp(my_lowers - my_min)
-                my_uppers = np.exp(my_uppers - my_min)
+                my_lowers = np.exp(my_lowers)
+                my_uppers = np.exp(my_uppers)
             if np.max(effect) > min_effect_size:
                 simple_plot(
                     X_vis[:, k],
