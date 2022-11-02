@@ -9,6 +9,6 @@ Handlers and utilities for single-cell omics analysis using [Contextualized.ML](
 
 ## Install and Use scContextualized
 ```
-pip install git+https://github.com/cnellington/Contextualized.git
+pip install contextualized-ml
 pip install git+https://github.com/blengerich/scContextualized.git
 ```
