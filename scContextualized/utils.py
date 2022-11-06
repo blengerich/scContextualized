@@ -48,17 +48,3 @@ def prepend_zero(ar_in):
 
     """
     return np.vstack((np.zeros((1, ar_in.shape[-1])), ar_in))
-
-
-
-def convert_to_one_hot(col):
-    """
-
-    :param col: np array with observations
-
-    returns col converted to one-hot values, and list of one-hot values.
-
-    """
-    vals = list(set(col))
-    one_hot_vars = np.array([vals.index(x) for x in col], dtype=np.float32)
-    return one_hot_vars, vals
